@@ -38,12 +38,95 @@
  */
 
 
+import javax.management.Notification;
 import java.util.*;
 
-class TicTacToe{
+class Player{
+    UUID playerId;
+    PersonInfo personInfo;
+    // PersonaRecord record;
+    Game game;
 
 }
+class MatchService{
+    Location globe;
+    Player findMatch(Player player1){
+        Optional<Player> match = globe.match(player1);
+        if(match!=null && match.isPresent()){
+            Player player2 =  match.get();
+            return player2;
+        }
+        throw new RuntimeException("Player not found for given player");
+    }
+}
+class LocationManagerService{
+    HashMap<String, smallestRegion> locationHashMap;
+    smallestRegion getLocation(String loc){
+        //processing logic to get proper key for new location mapping in the form country-state-city;
+        return locationHashMap.get(loc);
+    }
 
+    public void setNewLocation(Player player, String newLoc) {
+        smallestRegion region = getLocation(newLoc);
+        region.addPlayer(player);
+    }
+}
+class PlayerService{
+    LocationManagerService locMgr;
+    void changeLocation(Player player, String newLoc){
+        locMgr.setNewLocation(player,newLoc);
+    }
+    void registerPlayer(PersonInfo personInfo, String location){
+        Player player = new Player();
+        player.personInfo = personInfo;
+        player.playerId = new UUID(100,10);
+        locMgr.setNewLocation(player,location);
+    }
+    boolean registerNewGame(Player player, Player player2, Game game){
+        return false; //new UnsupportedOperationException();
+    }
+    boolean terminateGame(Player player){
+        if(player==null || player.game==null) throw new RuntimeException("termination for game called when either player or the game is not being played");
+        player.game = null;
+        return true;
+    }
+}
+class NotificationService{
+    void notifi(){
+
+    }
+}
+class GameService{
+    HashMap<UUID,Game> activeGames;
+    ScoreBoard scoreBoard;
+    MatchService matchService;
+    PlayerService playerService;
+    NotificationService notify;
+
+    void startGame(Player player1){
+        Player player2 = matchService.findMatch(player1);
+        Game game = new Game(player1,player2);
+        playerService.registerNewGame(player1,player2,game);
+        activeGames.put(game.gameId,game);
+    }
+    void terminate(Game game){
+        Player player1 = game.player1;
+        Player player2 = game.player2;;
+        playerService.terminateGame(player1);
+        playerService.terminateGame(player2);
+        activeGames.remove(game.gameId);
+    }
+    void play(Player player, int[] move){
+        Game game = player.game;
+        if(!activeGames.containsKey(game.gameId)) throw new RuntimeException("Incorrect game");
+        game.makeMove(player,move);
+        if(game.checkWinningCondition()){
+            notify.notifi();
+            scoreBoard.addWinner(player);
+        }
+    }
+
+}
 class ScoreBoard{
     PriorityQueue<Player> topPlayers;
     CountryName country;
@@ -197,20 +280,104 @@ class Board{
          return 1;
     }
 }
-class Player{
-    UUID playerId;
-    PersonInfo personInfo;
-   // PersonaRecord record;
-    Game game;
 
-}
 
 class PersonInfo{
     Name name;
-    Country country;
-    City city;
-    int zipcode;
+    Location loc;
 }
+
+abstract class Location{
+    void add(Location loc){
+        throw new UnsupportedOperationException();
+    }
+    void remove(Location loc){
+        throw new UnsupportedOperationException();
+    }
+    String getDescription(){
+        throw new UnsupportedOperationException();
+    }
+    Optional<Player> match(Player player) {
+        throw new UnsupportedOperationException();
+    }
+    void unmatch(Player player){
+        throw new UnsupportedOperationException();
+    }
+    Location getParent(){
+        throw new UnsupportedOperationException();
+    }
+    void setParent(Location location){
+        throw new UnsupportedOperationException();
+    }
+    void startedPlaying(){
+        throw new UnsupportedOperationException();
+    }
+}
+/*
+    this makes sense as not many players are prone to change the location a lot
+    loading from db wpuld not be a big issue in composite struture.
+
+*/
+
+class smallestRegion extends Location{
+    String description;
+    ArrayList<Player> players;
+    Location parent;
+    void addPlayer(Player player){
+        players.add(player);
+        player.personInfo.loc=this;
+    }
+    Location getParent(){
+        return this.parent;
+    }
+    void setParent(Location location){
+        this.parent = location;
+    }
+    void removePlayer(Player player){
+        players.remove(player);
+        player.personInfo.loc=null;
+    }
+    Optional<Player> match(Player player){
+        Optional<Player> matched;
+        matched = players.stream().filter(player1 -> player1.game==null).findFirst();
+        return matched;
+    }
+    void unmatch(Player player){
+        players.add(player);
+    }
+    String getDescription(){
+        return this.description;
+    }
+}
+
+class Region extends Location{
+    ArrayList<Location> nestedRegions;
+    String description;
+    Location parent;
+    Location getParent(){
+        return this.parent;
+    }
+    void setParent(Location location){
+        this.parent = location;
+    }
+
+    void add(Location loc){
+        nestedRegions.add(loc);
+    }
+    void remove(Location loc){
+        nestedRegions.remove(loc);
+    }
+    String getDescription(){
+        return this.description;
+    }
+    Optional<Player> match(Player player){
+        Optional<Player> matched=null;
+        for(Location location: this.nestedRegions)
+            matched = location.match(player);
+        return matched;
+    }
+}
+
 class Name{
     String firstName;
     String lastName;
@@ -219,11 +386,6 @@ class Name{
         this.firstName = firstName;
         this.lastName = lastName;
     }
-}
-class Country{
-    CountryName name;
-    List<City> cities;
-    List<Integer> zipcodes;
 }
 enum CountryName{
     USA,
