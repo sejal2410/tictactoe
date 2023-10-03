@@ -40,6 +40,7 @@
 
 import javax.management.Notification;
 import java.util.*;
+import java.util.stream.Collectors;
 
 class Player{
     UUID playerId;
@@ -73,8 +74,10 @@ class LocationManagerService{
 }
 class PlayerService{
     LocationManagerService locMgr;
+    HashMap<UUID, Player> players;
     void changeLocation(Player player, String newLoc){
         locMgr.setNewLocation(player,newLoc);
+        players.put(player.playerId,player);
     }
     void registerPlayer(PersonInfo personInfo, String location){
         Player player = new Player();
@@ -89,6 +92,10 @@ class PlayerService{
         if(player==null || player.game==null) throw new RuntimeException("termination for game called when either player or the game is not being played");
         player.game = null;
         return true;
+    }
+
+    public List<Player> getPlayersFromUUID(List<UUID> playerUUIDS) {
+        return playerUUIDS.stream().map(uuid -> players.get(uuid)).collect(Collectors.toList());
     }
 }
 class NotificationService{
@@ -124,6 +131,11 @@ class GameService{
             notify.notifi();
             scoreBoard.addWinner(player);
         }
+    }
+
+    List<Player> getTopPlayers(){
+        List<UUID> playerUUIDS = scoreBoard.getTopKPlayers(10);
+        return playerService.getPlayersFromUUID(playerUUIDS);
     }
 
 }
