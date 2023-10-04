@@ -46,9 +46,25 @@ class Player{
     UUID playerId;
     PersonInfo personInfo;
     // PersonaRecord record;
-    Game game;
+    Game game; //Rename it as Current Game Maybe ?
 
 }
+//This seems fine but should have been interface
+//Using interface you could have created a location based Match Service : 
+interface IMatchService{
+    public Player getMatchPlayer(Player p);
+}
+
+class LocationBasedMatchService implements IMatchService{
+    public Player getMatchPlayer(Player p){
+        //You can write the Location Based Logic Here :
+        //Additionally, this class should have access to the LocationDB or another Interface to fetch the 
+        // List Of players from a Location.
+        // Its better to use Interface as it might allow you to change the implementation. 
+        return p;
+    }
+}
+
 class MatchService{
     Location globe;
     Player findMatch(Player player1){
@@ -57,6 +73,8 @@ class MatchService{
             Player player2 =  match.get();
             return player2;
         }
+        //Never throw Exceptions : 
+        //Return a result like null instead : 
         throw new RuntimeException("Player not found for given player");
     }
 }
