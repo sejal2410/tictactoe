@@ -59,23 +59,18 @@ class TicTacToeGameService implements IGameService{
         return game.getWinner();
     }
 }
-abstract class GameManager{
-    List<Player> players;
-    List<Game> games;
 
-    void addPlayer(Player player){
-        players.add(player);
-    }
-}
-class TicTacToeGameManager extends GameManager{
-    IGameService tictactoeService;
+class GameManager {
+    IGameService gameService;
     IIntitializeGameService intitializeGameService;
     HashMap<Player,Integer> scores;
+    ArrayList<Player> players;
+    ArrayList<Game> games;
     ScoreBoard scoreBoard;
-    TicTacToeGameManager(IGameService tictactoeService,IIntitializeGameService intitializeGameService){
-        this.tictactoeService =tictactoeService;
-        this.intitializeGameService = intitializeGameService
-        players = new ArrayList<>();
+     GameManager(IGameService tictactoeService,IIntitializeGameService intitializeGameService){
+        this.gameService =tictactoeService;
+        this.intitializeGameService = intitializeGameService;
+        this.players = new ArrayList<>();
         games = new ArrayList<>();
         scoreBoard = new ScoreBoard();
     }
@@ -85,17 +80,15 @@ class TicTacToeGameManager extends GameManager{
     }
 
     void play(Player player, int[] move,Game game, Piece piece){
-        tictactoeService.play(player,game,move,piece);
-        if(tictactoeService.endCondition(game)){
-            Player winner = tictactoeService.getWinner(game);
+        gameService.play(player,game,move,piece);
+        if(gameService.endCondition(game)){
+            Player winner = gameService.getWinner(game);
             if(winner!=null){
                 scores.put(winner,scores.getOrDefault(winner,0)+1);
                 games.remove(game);
             }
         }
     }
-
-
 }
 enum GameType{
     TICTACTOE,
@@ -284,5 +277,15 @@ class TicTacToeGame extends Game{
     }
 }
 public class TicTacToe {
+    IIntitializeGameService intitilizeTicTokGame = new TicTacToeIntitializeGameService();
+    IGameService ticTokGameSerice = new TicTacToeGameService();
 
+    GameManager tickTokApp = new GameManager(ticTokGameSerice, intitilizeTicTokGame );
+    /*
+
+    IIntitializeGameService intitilizeChessGame = new ChessInitializeService();
+    IGameService chessGameSerice = new ChessGameService();
+
+    GameManager chessApp = new GameManager(chessGameSerice, intitilizeChessGame );
+     */
 }
