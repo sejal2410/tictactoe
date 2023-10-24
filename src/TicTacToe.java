@@ -32,11 +32,20 @@ class TicTacToeIntitializeGameService implements IIntitializeGameService{
     }
 }
 interface IGameService{
+    Game startGame(List<Player> players, List<String> args);
     void play(Player player, Game game, int[] move, Piece piece);
+    //Game startGame(List<Player> players);
     boolean endCondition(Game game);
     Player getWinner(Game game);
 }
 class TicTacToeGameService implements IGameService{
+
+    @Override
+    public Game startGame(List<Player> players, List<String> args) {
+        TicTacToeGame game =null;
+        game = new TicTacToeGame();
+        return game;
+    }
 
     @Override
     public void play(Player player, Game game, int[] move, Piece piece) {
